@@ -1,4 +1,4 @@
 #!/bin/bash
 echo "Destroying two processes"
-kubectl delete pod `kubectl get pods | grep myapp -m 2| awk '{ print $1 }'` --grace-period 0 --force
+kubectl -n12factor-dev  delete pod `kubectl get pods -n12factor-dev | grep myapp -m 2| awk '{ print $1 }'` --grace-period 0 --force
 ./run.sh
