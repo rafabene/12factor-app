@@ -1,7 +1,9 @@
 #!/bin/bash
 echo "Deploying a database"
-kubectl run mysql -n 12factor-dev --image=mysql:5.6 --env MYSQL_DATABASE=mydatabase --env MYSQL_USER=myuser --env MYSQL_PASSWORD=mypassword --env MYSQL_ROOT_PASSWORD=mypassword
-kubectl expose deployment mysql -n12factor-dev  --port 3306
+kubectl create deployment mysql -n 12factor-dev --image=mysql:5.6 
+kubectl -n 12factor-dev set env deployment mysql -e MYSQL_DATABASE=mydatabase -e MYSQL_USER=myuser -e MYSQL_PASSWORD=mypassword -e MYSQL_ROOT_PASSWORD=mypassword
+kubectl -n 12factor-dev set env deployment myapp -e host=mysql -e  username=myuser -e  password=mypassword -e database=mydatabase -e GREETING-
+kubectl -n 12factor-dev expose deployment mysql  --port 3306
 echo "Attach it to the app"
-kubectl set env deployment myapp -n12factor-dev  host=mysql username=myuser password=mypassword database=mydatabase GREETING-
+
 

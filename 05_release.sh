@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t rafabene/myapp .
+docker build -t rafabene/myapp:1.0 .

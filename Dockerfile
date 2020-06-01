@@ -1,4 +1,4 @@
-FROM openjdk:12
+FROM openjdk:14
 
 WORKDIR /usr/src/myapp
 COPY target/helloworld-service-fat.jar /usr/src/myapp
