@@ -67,13 +67,13 @@
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
-            <artifactId>vertx-mysql-postgresql-client</artifactId>
+            <artifactId>vertx-config</artifactId>
             <version>${vertx.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.mauricio</groupId>
-            <artifactId>mysql-async_2.11</artifactId>
-            <version>0.2.20</version>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-mysql-client</artifactId>
+            <version>${vertx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

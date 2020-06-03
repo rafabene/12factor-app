@@ -17,6 +17,7 @@
 package com.redhat.developers.helloworld;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,15 +26,17 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.ext.asyncsql.AsyncSQLClient;
-import io.vertx.ext.asyncsql.MySQLClient;
-import io.vertx.ext.sql.ResultSet;
-import io.vertx.ext.sql.SQLConnection;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.CorsHandler;
+import io.vertx.mysqlclient.MySQLConnectOptions;
+import io.vertx.mysqlclient.MySQLPool;
+import io.vertx.sqlclient.PoolOptions;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
 
 public class HelloworldVerticle extends AbstractVerticle {
 
@@ -45,9 +48,7 @@ public class HelloworldVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
 
         // Config CORS
-        router.route().handler(CorsHandler.create("*")
-            .allowedMethod(HttpMethod.GET)
-            .allowedHeader("Content-Type"));
+        router.route().handler(CorsHandler.create("*").allowedMethod(HttpMethod.GET).allowedHeader("Content-Type"));
 
         // Database endpoint
         router.get("/api/db").handler(ctx -> {
@@ -58,8 +59,7 @@ public class HelloworldVerticle extends AbstractVerticle {
         // hello endpoint
         router.get("/api/hello/:name").handler(ctx -> {
             String helloMsg = hello(ctx.request().getParam("name"));
-            logger.info("New request from " + ctx.request().getHeader("User-Agent") +
-                "\nSaying...: " + helloMsg);
+            logger.info("New request from " + ctx.request().getHeader("User-Agent") + "\nSaying...: " + helloMsg);
             ctx.response().end(helloMsg);
         });
 
@@ -67,29 +67,42 @@ public class HelloworldVerticle extends AbstractVerticle {
         router.get("/api/health").handler(ctx -> {
             ctx.response().end("I'm ok");
         });
-        vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+        vertx.createHttpServer().requestHandler(router).listen(8080);
     }
 
     private void readFromDatabase(RoutingContext ctx) {
-        AsyncSQLClient mySQLClient = MySQLClient.createNonShared(vertx, ApplicationConfiguration.load(config()));
-        mySQLClient.getConnection(res -> {
-            if (res.succeeded()) {
-                SQLConnection connection = res.result();
-                connection.query("SELECT name FROM mytable", q -> {
-                    if (q.succeeded()) {
-                        // Get the result set
-                        ResultSet resultSet = q.result();
-                        List<JsonArray> results = resultSet.getResults();
-                        ctx.response().end(results.toString());
-                    } else {
-                        q.cause().printStackTrace();
-                        ctx.response().end("Error executing the query. Check the logs");
-                    }
-                });
+        JsonObject config = ApplicationConfiguration.load(config());
+        System.out.println(config);
+        MySQLConnectOptions connectOptions = new MySQLConnectOptions()
+                .setPort(config.getInteger("port") == null? 3306 : config.getInteger("port"))
+                .setHost(config.getString("host"))
+                .setDatabase(config.getString("database"))
+                .setUser(config.getString("username"))
+                .setPassword(config.getString("password"));
+        System.out.println(config.getString("password"));
+        // Pool options
+        PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+        System.out.println("pool options");
+        // Create the client pool
+        MySQLPool client = MySQLPool.pool(vertx, connectOptions, poolOptions);
+        System.out.println("client options");
+        client.query("SELECT name FROM mytable").execute(ar -> {
+            if (ar.succeeded()) {
+              RowSet<Row> rowSet = ar.result();
+              logger.info("Got " + rowSet.size() + " rows ");
+              JsonArray jsonArray = new JsonArray();
+              for (Row row: rowSet){
+                  jsonArray.add(row.getString("name"));
+              }
+              
+              ctx.response().end(jsonArray.toString());
             } else {
-                res.cause().printStackTrace();
-                ctx.response().end("No connection to the database.");
+                ctx.response().end("Error executing the query. Check the logs");
+                ar.cause().printStackTrace();
             }
+          
+            // Now close the pool
+            client.close();
         });
     }
 
