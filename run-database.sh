@@ -5,7 +5,7 @@ export INGRESS_PORT=$(kubectl -n 12factor-dev get service myapp -o jsonpath='{.s
 url=$1
 if [ -z "$url" ]
 then
-    url="192.168.100.100:$INGRESS_PORT/api/db"
+    url="`minikube ip`:$INGRESS_PORT/api/db"
 fi
 
 while true
