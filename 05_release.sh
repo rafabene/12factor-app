@@ -1,2 +1,4 @@
 #!/bin/bash
-docker build -t rafabene/myapp:1.0 .
+source .env
+podman build --arch amd64 -t quay.io/$QUAY_USER/my12factorapp:1.0 .
+podman push quay.io/$QUAY_USER/my12factorapp:1.0

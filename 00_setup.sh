@@ -1,4 +1,6 @@
 #!/bin/bash
-kubectl create namespace 12factor-dev
-kubectl config set-context $(kubectl config current-context) --namespace=12factor-dev
-echo "Execute eval \$(minikube -p demo docker-env)"
+echo QUAY_USER="rafabene1006" > .env
+echo OPENSHIFT_DOMAIN="apps.cluster-dj2hg.dynamic.redhatworkshops.io" >> .env
+#podman machine stop && podman machine start
+oc new-project  12factor-dev
+#podman login quay.io

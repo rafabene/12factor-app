@@ -1,19 +1,16 @@
 #!/bin/bash
+source .env
 echo "Deploying to the staging area"
-kubectl create namespace 12factor-staging
-kubectl create deployment myapp --image rafabene/myapp:1.0 -n 12factor-staging
-kubectl expose deployment myapp --port 8080 --type NodePort -n 12factor-staging
-export INGRESS_PORT=$(kubectl -n 12factor-staging get service myapp -o jsonpath='{.spec.ports[0].nodePort}')
+oc new-project  12factor-staging
+oc -n 12factor-staging create deployment myapp --image quay.io/$QUAY_USER/my12factorapp:1.0 
+oc -n 12factor-staging patch deployment myapp -p '{"spec":{"template":{"spec":{"containers":[{"name":"myapp", "imagePullPolicy":"IfNotPresent", "readinessProbe":{"httpGet":{"path": "/api/health", "port":8080, "initialDelaySeconds":1, "periodSeconds": 1}}}]}}}}'
+oc -n 12factor-staging expose deployment myapp --port 8080 --type NodePort 
+oc -n 12factor-staging expose service myapp
 
-
-url=$1
-if [ -z "$url" ]
-then
-    url="`minikube ip`:$INGRESS_PORT/api/hello/Rafael"
-fi
-
+#!/bin/bash
+source .env
 while true
-do curl $url
-sleep .5
-echo
+    do curl http://myapp-12factor-staging.$OPENSHIFT_DOMAIN/api/hello/Rafael
+    sleep .5
+    echo
 done
